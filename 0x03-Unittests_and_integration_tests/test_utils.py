@@ -65,7 +65,8 @@ class TestMemoize(unittest.TestCase):
             def a_property(self):
                 return self.a_method()
 
-        with patch.object(TestClass, 'a_method', new_callable=MagicMock) as mock_a_method:
+        with patch.object(TestClass, 'a_method', new_callable=MagicMock) \
+                as mock_a_method:
 
             mock_a_method.return_value = 42  # mock a_method to return a val
             obj = TestClass()
