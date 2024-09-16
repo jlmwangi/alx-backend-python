@@ -13,17 +13,17 @@ from utils import get_json
 class TestGithubOrgClient(unittest.TestCase):
     '''class inheriting from unittest'''
     @parameterized.expand([
-        ('google', {"login": "google"}),
-        ('abc', {"login": "abc"})
+        ('google', 'https://api.github.com/orgs/google'),
+        ('abc', 'https://api.github.com/orgs/abc')
     ])
     @patch('utils.get_json')  # patch to make sure getjson is called once
-    def test_org(self, name, result, mock_get_json):
+    def test_org(self, name, expected_url, mock_get_json):
         '''tests that githuborgclient returns correct value'''
-        mock_get_json.return_value = result
-
         client_github = GithubOrgClient(name)
 
-        self.assertEqual(client_github.org(), result)
+        mock_get_json.return_value = {'orgs': expected_url}
+
+        self.assertEqual(client_github.org(), 'https://api.github.com/orgs/google')
 
     @patch.object(client.GithubOrgClient, '_public_repos_url',
                   new_callable=PropertyMock)
@@ -40,6 +40,26 @@ class TestGithubOrgClient(unittest.TestCase):
 
             self.assertEqual(client_github._public_repos_url,
                              'https://api.github.com/orgs/google/repos')
+
+    @patch('utils.get_json')
+    def test_public_repos(self, mock_get_json):
+        '''mock get_json to get a payload of your choice'''
+        client_github = GithubOrgClient('google')
+        mock_get_json.return_value = [{'name': 'repo1'},
+                {'name': 'repo2'}
+        ]
+
+        with patch.object(GithubOrgClient, '_public_repos_url', new_callable=PropertyMock) as mock_public_repos_url:
+            '''mck public repos_url to return repos'''
+            mock_public_repos_url.return_value = 'https://api.github.com/orgs/google/repos'
+
+            repos = client_github.public_repos()
+
+            self.assertEqual(repos, ['repo1', 'repo2'])
+
+            mock_public_repos_url.assert_called_once()
+            mock_get_json.assert_called_once_with('https://api.github.com/orgs/google/repos')
+
 
 
 if __name__ == '__main__':
